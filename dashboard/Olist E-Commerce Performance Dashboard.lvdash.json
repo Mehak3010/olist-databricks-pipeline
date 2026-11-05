@@ -1,0 +1,901 @@
+{
+  "datasets": [
+    {
+      "name": "97dbe6fd",
+      "displayName": "olist sales and delivery performance overview",
+      "queryLines": [
+        "-- Monthly revenue (excluding partial months)\r\n",
+        "SELECT * FROM workspace.olist.gold_monthly_revenue\r\n",
+        "WHERE month BETWEEN '2017-01-01' AND '2018-08-01' ORDER BY month;\r\n",
+        "\r\n",
+        "-- Top 10 categories\r\n",
+        "SELECT * FROM workspace.olist.gold_category_performance LIMIT 10;\r\n",
+        "\r\n",
+        "-- Delivery by state\r\n",
+        "SELECT * FROM workspace.olist.gold_delivery_by_state;\r\n",
+        "\r\n",
+        "-- Delay vs review\r\n",
+        "SELECT * FROM workspace.olist.gold_delay_vs_review;\r\n",
+        "\r\n",
+        "-- Repeat rate\r\n",
+        "SELECT * FROM workspace.olist.gold_repeat_customers;"
+      ]
+    },
+    {
+      "name": "delay_vs_review",
+      "displayName": "Olist Delay vs Review",
+      "config": {
+        "source": "workspace.olist.gold_delay_vs_review",
+        "measures": [
+          {
+            "name": "orders",
+            "expr": "SUM(orders)"
+          },
+          {
+            "name": "avg_review_score",
+            "expr": "AVG(avg_review_score)",
+            "format": {
+              "type": "number",
+              "decimalPlaces": {
+                "type": "exact",
+                "places": 2.0
+              }
+            }
+          }
+        ],
+        "version": "1.1",
+        "comment": "Review scores by delivery delay bucket",
+        "dimensions": [
+          {
+            "name": "delay_bucket",
+            "expr": "delay_bucket",
+            "displayName": "Delivery Delay"
+          }
+        ]
+      }
+    },
+    {
+      "name": "category_performance",
+      "displayName": "Olist Top Categories",
+      "config": {
+        "source": "SELECT category_english, revenue, orders, items_sold, avg_price FROM workspace.olist.gold_category_performance ORDER BY revenue DESC LIMIT 10",
+        "measures": [
+          {
+            "name": "revenue",
+            "expr": "SUM(revenue)",
+            "format": {
+              "type": "currency",
+              "currencyCode": "BRL",
+              "abbreviation": "compact"
+            }
+          },
+          {
+            "name": "orders",
+            "expr": "SUM(orders)"
+          }
+        ],
+        "version": "1.1",
+        "comment": "Top 10 product categories by revenue",
+        "dimensions": [
+          {
+            "name": "category_english",
+            "expr": "category_english",
+            "displayName": "Product Category"
+          }
+        ]
+      }
+    },
+    {
+      "name": "seller_performance",
+      "displayName": "Olist Top Sellers",
+      "config": {
+        "source": "SELECT seller_id, seller_state, orders, revenue, avg_review_score, pct_late,\n  ROW_NUMBER() OVER (ORDER BY revenue DESC) AS seller_rank\nFROM workspace.olist.gold_seller_performance ORDER BY revenue DESC LIMIT 10",
+        "measures": [
+          {
+            "name": "orders",
+            "expr": "SUM(orders)"
+          },
+          {
+            "name": "revenue",
+            "expr": "SUM(revenue)",
+            "format": {
+              "type": "currency",
+              "currencyCode": "BRL",
+              "abbreviation": "none",
+              "decimalPlaces": {
+                "type": "exact",
+                "places": 0.0
+              }
+            }
+          },
+          {
+            "name": "avg_review_score",
+            "expr": "AVG(avg_review_score)",
+            "format": {
+              "type": "number",
+              "decimalPlaces": {
+                "type": "exact",
+                "places": 2.0
+              }
+            }
+          },
+          {
+            "name": "pct_late",
+            "expr": "AVG(pct_late)",
+            "format": {
+              "type": "number",
+              "decimalPlaces": {
+                "type": "exact",
+                "places": 1.0
+              }
+            }
+          }
+        ],
+        "version": "1.1",
+        "comment": "Top 10 sellers by revenue",
+        "dimensions": [
+          {
+            "name": "seller_rank",
+            "expr": "seller_rank",
+            "displayName": "Rank"
+          },
+          {
+            "name": "seller_id",
+            "expr": "seller_id",
+            "displayName": "Seller"
+          },
+          {
+            "name": "seller_state",
+            "expr": "seller_state",
+            "displayName": "Seller State"
+          }
+        ]
+      }
+    },
+    {
+      "name": "delivery_by_state",
+      "displayName": "Olist Delivery by State",
+      "config": {
+        "source": "workspace.olist.gold_delivery_by_state",
+        "measures": [
+          {
+            "name": "orders",
+            "expr": "SUM(orders)"
+          },
+          {
+            "name": "avg_delivery_days",
+            "expr": "AVG(avg_delivery_days)",
+            "format": {
+              "type": "number",
+              "decimalPlaces": {
+                "type": "exact",
+                "places": 1.0
+              }
+            }
+          },
+          {
+            "name": "avg_delay_days",
+            "expr": "AVG(avg_delay_days)",
+            "format": {
+              "type": "number",
+              "decimalPlaces": {
+                "type": "exact",
+                "places": 1.0
+              }
+            }
+          },
+          {
+            "name": "late_orders",
+            "expr": "SUM(orders * pct_late / 100.0)"
+          },
+          {
+            "name": "pct_late_overall",
+            "expr": "MEASURE(`late_orders`) / MEASURE(`orders`)",
+            "format": {
+              "type": "percentage",
+              "decimalPlaces": {
+                "type": "exact",
+                "places": 1.0
+              }
+            }
+          },
+          {
+            "name": "avg_review_score",
+            "expr": "AVG(avg_review_score)",
+            "format": {
+              "type": "number",
+              "decimalPlaces": {
+                "type": "exact",
+                "places": 2.0
+              }
+            }
+          }
+        ],
+        "version": "1.1",
+        "comment": "Delivery performance and review scores by customer state",
+        "dimensions": [
+          {
+            "name": "customer_state",
+            "expr": "customer_state",
+            "displayName": "Customer State"
+          }
+        ]
+      }
+    },
+    {
+      "name": "monthly_revenue",
+      "displayName": "Olist Monthly Revenue",
+      "config": {
+        "source": "workspace.olist.gold_monthly_revenue",
+        "measures": [
+          {
+            "name": "orders",
+            "expr": "SUM(orders)"
+          },
+          {
+            "name": "revenue",
+            "expr": "SUM(revenue)",
+            "format": {
+              "type": "currency",
+              "currencyCode": "BRL",
+              "abbreviation": "compact",
+              "decimalPlaces": {
+                "type": "max",
+                "places": 2.0
+              }
+            }
+          },
+          {
+            "name": "freight",
+            "expr": "SUM(freight)",
+            "format": {
+              "type": "currency",
+              "currencyCode": "BRL",
+              "abbreviation": "compact"
+            }
+          },
+          {
+            "name": "avg_order_value",
+            "expr": "MEASURE(`revenue`) / MEASURE(`orders`)",
+            "format": {
+              "type": "currency",
+              "currencyCode": "BRL"
+            }
+          }
+        ],
+        "filter": "month >= '2017-01-01' AND month <= '2018-08-01'",
+        "version": "1.1",
+        "comment": "Monthly Olist revenue excluding the partial first and last months (Jan 2017 - Aug 2018)",
+        "dimensions": [
+          {
+            "name": "month",
+            "expr": "month",
+            "format": {
+              "type": "date",
+              "dateFormat": "locale_short_month"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "pages": [
+    {
+      "name": "88961951",
+      "displayName": "Untitled page",
+      "layout": [
+        {
+          "widget": {
+            "name": "total_orders",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "monthly_revenue",
+                  "fields": [
+                    {
+                      "name": "measure(orders)",
+                      "expression": "MEASURE(`orders`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Total Orders"
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(orders)",
+                  "rowNumber": 0
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 3,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "top_categories_bar",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "category_performance",
+                  "fields": [
+                    {
+                      "name": "measure(revenue)",
+                      "expression": "MEASURE(`revenue`)"
+                    },
+                    {
+                      "name": "category_english",
+                      "expression": "`category_english`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": {
+                  "value": "Top 10 Product Categories by Revenue",
+                  "fields": []
+                }
+              },
+              "version": 3,
+              "mark": {
+                "colors": [
+                  "#2272B4"
+                ]
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "measure(revenue)",
+                  "displayName": "Revenue (BRL)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "y": {
+                  "fieldName": "category_english",
+                  "displayName": "Product Category",
+                  "scale": {
+                    "categorySize": {
+                      "number": 10,
+                      "type": "number-of-categories"
+                    },
+                    "type": "categorical",
+                    "sort": {
+                      "by": "x-reversed"
+                    }
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 8,
+            "y": 5,
+            "width": 4,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "total_revenue",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "monthly_revenue",
+                  "fields": [
+                    {
+                      "name": "measure(revenue)",
+                      "expression": "MEASURE(`revenue`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Total Revenue"
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(revenue)",
+                  "rowNumber": 0
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 2,
+            "width": 3,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "delivery_days_by_state",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "delivery_by_state",
+                  "fields": [
+                    {
+                      "name": "customer_state",
+                      "expression": "`customer_state`"
+                    },
+                    {
+                      "name": "measure(avg_delivery_days)",
+                      "expression": "MEASURE(`avg_delivery_days`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Avg delivery days by state (north is slowest)"
+              },
+              "version": 3,
+              "mark": {
+                "colors": [
+                  "#2272B4"
+                ]
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "customer_state",
+                  "displayName": "Customer State",
+                  "scale": {
+                    "categorySize": {
+                      "number": 30,
+                      "type": "number-of-categories"
+                    },
+                    "type": "categorical",
+                    "sort": {
+                      "by": "y-reversed"
+                    }
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(avg_delivery_days)",
+                  "displayName": "Avg Delivery Days",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 11,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "repeat_customer_rate",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "97dbe6fd",
+                  "fields": [
+                    {
+                      "name": "avg(repeat_rate_pct)",
+                      "expression": "AVG(`repeat_rate_pct`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Repeat Customer Rate (%)"
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "avg(repeat_rate_pct)",
+                  "rowNumber": 0
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 2,
+            "width": 3,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "late_deliveries_pct",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "delivery_by_state",
+                  "fields": [
+                    {
+                      "name": "measure(pct_late_overall)",
+                      "expression": "MEASURE(`pct_late_overall`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Late Deliveries (%)"
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(pct_late_overall)",
+                  "rowNumber": 0
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 9,
+            "y": 2,
+            "width": 3,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "monthly_revenue_line",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "monthly_revenue",
+                  "fields": [
+                    {
+                      "name": "month",
+                      "expression": "`month`"
+                    },
+                    {
+                      "name": "measure(revenue)",
+                      "expression": "MEASURE(`revenue`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": {
+                  "value": "Monthly Revenue (Jan 2017 – Aug 2018)",
+                  "fields": []
+                }
+              },
+              "version": 3,
+              "mark": {
+                "colors": [
+                  "#2272B4"
+                ]
+              },
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "month",
+                  "axis": {
+                    "title": "Month"
+                  },
+                  "displayName": "month",
+                  "scale": {
+                    "type": "temporal"
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(revenue)",
+                  "axis": {
+                    "title": "Revenue (R$)"
+                  },
+                  "displayName": "revenue",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 5,
+            "width": 8,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "review_by_delay",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "delay_vs_review",
+                  "fields": [
+                    {
+                      "name": "measure(avg_review_score)",
+                      "expression": "MEASURE(`avg_review_score`)"
+                    },
+                    {
+                      "name": "delay_bucket",
+                      "expression": "`delay_bucket`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Avg review score by delivery delay"
+              },
+              "version": 3,
+              "mark": {
+                "colors": [
+                  "#2272B4"
+                ]
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "delay_bucket",
+                  "axis": {
+                    "title": "Delivery Delay"
+                  },
+                  "displayName": "Delivery Delay",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(avg_review_score)",
+                  "axis": {
+                    "title": "Avg Review Score"
+                  },
+                  "displayName": "Avg Review Score",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "label": {
+                  "show": true,
+                  "text": {
+                    "fieldName": "measure(avg_review_score)",
+                    "format": {
+                      "abbreviation": "none",
+                      "decimalPlaces": {
+                        "places": 2,
+                        "type": "exact"
+                      },
+                      "type": "number-plain"
+                    }
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 11,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "top_sellers_table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "seller_performance",
+                  "fields": [
+                    {
+                      "name": "seller_rank",
+                      "expression": "`seller_rank`"
+                    },
+                    {
+                      "name": "seller_id",
+                      "expression": "`seller_id`"
+                    },
+                    {
+                      "name": "measure(orders)",
+                      "expression": "MEASURE(`orders`)"
+                    },
+                    {
+                      "name": "measure(revenue)",
+                      "expression": "MEASURE(`revenue`)"
+                    },
+                    {
+                      "name": "measure(avg_review_score)",
+                      "expression": "MEASURE(`avg_review_score`)"
+                    },
+                    {
+                      "name": "measure(pct_late)",
+                      "expression": "MEASURE(`pct_late`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": {
+                  "value": "Top 10 Sellers by Revenue",
+                  "fields": []
+                }
+              },
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "seller_rank"
+                  },
+                  {
+                    "fieldName": "seller_id"
+                  },
+                  {
+                    "fieldName": "measure(orders)"
+                  },
+                  {
+                    "fieldName": "measure(revenue)"
+                  },
+                  {
+                    "fieldName": "measure(avg_review_score)"
+                  },
+                  {
+                    "fieldName": "measure(pct_late)"
+                  }
+                ]
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 17,
+            "width": 12,
+            "height": 7
+          }
+        },
+        {
+          "widget": {
+            "name": "dashboard_header",
+            "spec": {
+              "verticalAlign": "center",
+              "version": 1,
+              "widgetType": "text",
+              "encodings": {
+                "text": {
+                  "lines": [
+                    "# Olist E-Commerce Performance Dashboard\n",
+                    "\n",
+                    "*Databricks, PySpark, Delta Lake&#32;*"
+                  ],
+                  "fields": []
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "data_footnote",
+            "spec": {
+              "style": {
+                "fontColor": {
+                  "dark": "#9AA4B1",
+                  "light": "#6B7280"
+                }
+              },
+              "version": 1,
+              "widgetType": "text",
+              "encodings": {
+                "text": {
+                  "lines": [
+                    "*Data: Olist Brazilian e-commerce dataset (Kaggle), orders from Sep 2016 to Oct 2018. Charts show Jan 2017 - Aug 2018 (first and last months are partial).*"
+                  ],
+                  "fields": []
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 24,
+            "width": 12,
+            "height": 1
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED"
+    },
+    "applyModeEnabled": false
+  }
+}
