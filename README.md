@@ -79,7 +79,7 @@ Seven Silver tables were validated. Only the payments rule caught anything: **9 
 
 ## Dashboard
 
-![Dashboard top](images/dashboard_top.png)
+![Dashboard top](images/dashboard_overview.png)
 
 ![Dashboard middle](images/dashboard_middle.png)
 
