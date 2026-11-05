@@ -147,4 +147,4 @@ olist-databricks-pipeline/
 
 ## Author
 
-Mehak Arora | [LinkedIn](https://www.linkedin.com/mehakar/) | [GitHub](https://github.com/Mehak3010/)
+Mehak Arora | [LinkedIn](https://www.linkedin.com/in/mehakar/) | [GitHub](https://github.com/Mehak3010/)
